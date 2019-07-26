@@ -106,10 +106,14 @@ import Foundation
     }
     /// Whether the indicator should bounce when selecting a new index. Defaults to true.
     @IBInspectable public var bouncesOnChange: Bool = true
-    /// Whether the the control should always send the .ValueChanged event, regardless of the index remaining unchanged after interaction. Defaults to `false`.
+    /// Whether the the control should always send the .valueChanged event, regardless of the index remaining unchanged after interaction. Defaults to `false`.
     @IBInspectable public var alwaysAnnouncesValue: Bool = false
-    /// Whether to send the .ValueChanged event immediately or wait for animations to complete. Defaults to `true`.
+    /// Whether to send the .valueChanged event immediately or wait for animations to complete. Defaults to `true`.
     @IBInspectable public var announcesValueImmediately: Bool = true
+    
+    /// Whether to send .valueChanged event continuously while panning
+    @IBInspectable public var announcesValueContinuously: Bool = true
+    
     /// Whether the the control should ignore pan gestures. Defaults to `false`.
     @IBInspectable public var panningDisabled: Bool = false
     /// The control's and indicator's corner radii.
@@ -334,6 +338,11 @@ import Foundation
                       width: elementWidth,
                       height: height - totalInsetSize)
     }
+    
+    public func nearestIndexToIndicator() -> Int {
+        return nearestIndex(toPoint: indicatorView.center)
+    }
+    
     private func nearestIndex(toPoint point: CGPoint) -> Int {
         let distances = normalSegments.map { abs(point.x - $0.center.x) }
         return Int(distances.firstIndex(of: distances.min()!)!)
@@ -359,6 +368,11 @@ import Foundation
             frame.origin.x += gestureRecognizer.translation(in: self).x
             frame.origin.x = max(min(frame.origin.x, bounds.width - indicatorViewInset - frame.width), indicatorViewInset)
             indicatorView.frame = frame
+            
+            if announcesValueContinuously {
+                sendActions(for: .touchDragInside)
+            }
+            
         case .ended, .failed, .cancelled:
             setIndex(nearestIndex(toPoint: indicatorView.center))
         default: break
